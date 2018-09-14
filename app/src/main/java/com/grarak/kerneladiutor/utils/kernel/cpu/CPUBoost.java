@@ -60,6 +60,11 @@ public class CPUBoost {
     private static final String CPU_BOOST_WAKEUP = CPU_BOOST + "/wakeup_boost";
     private static final String CPU_BOOST_HOTPLUG = CPU_BOOST + "/hotplug_boost";
 
+    private static final String CPU_INPUT_BOOST = "/sys/kernel/cpu_input_boost";
+    private static final String CPU_INPUT_BOOST_ENABLED = CPU_INPUT_BOOST + "/enabled";
+    private static final String CPU_INPUT_BOOST_DURATION = CPU_INPUT_BOOST + "/ib_duration_ms";
+    private static final String CPU_INPUT_BOOST_FREQ = CPU_INPUT_BOOST + "/ib_freqs";
+
     private String ENABLE;
 
     private CPUBoost() {
@@ -192,9 +197,55 @@ public class CPUBoost {
         return ENABLE != null;
     }
 
+    public void enablecpuinputboost(boolean enable, Context context) {
+        run(Control.write(enable ? "1" : "0", CPU_INPUT_BOOST_ENABLED), CPU_INPUT_BOOST_ENABLED, context);
+    }
+
+    public static boolean iscpuinputboostEnabled() {
+        return Utils.readFile(CPU_INPUT_BOOST_ENABLED).equals("1");
+    }
+
+    public static boolean hascpuinputboost() {
+        return Utils.existFile(CPU_INPUT_BOOST);
+    }
+
+    public static boolean hascpuinputboostenable() {
+        return Utils.existFile(CPU_INPUT_BOOST_ENABLED);
+    }
+
+    public void setcpuiboostduration(int value, Context context) {
+        run(Control.write(String.valueOf(value), CPU_INPUT_BOOST_DURATION), CPU_INPUT_BOOST_DURATION, context);
+    }
+
+    public static int getcpuiboostduration() {
+        return Utils.strToInt(Utils.readFile(CPU_INPUT_BOOST_DURATION));
+    }
+
+    public static boolean hascpuiboostduration() {
+        return Utils.existFile(CPU_INPUT_BOOST_DURATION);
+    }
+
+    public void setcpuiboostfreq(String value1, String value2, Context context) {
+        String value = value1 + " " + value2;
+        run(Control.write(String.valueOf(value), CPU_INPUT_BOOST_FREQ), CPU_INPUT_BOOST_FREQ, context);
+    }
+
+    public static List<String> getcpuiboostfreq() {
+        String freqs[] = Utils.readFile(CPU_INPUT_BOOST_FREQ).split(" ");
+        List<String> ibfreqs = new ArrayList<>();
+        for (String freq : freqs) {
+            ibfreqs.add(freq.trim());
+        }
+        return ibfreqs;
+    }
+
+    public static boolean hascpuiboostfreq() {
+        return Utils.existFile(CPU_INPUT_BOOST_FREQ);
+    }
+
     public boolean supported() {
         return hasEnable() || hasCpuBoostDebugMask() || hasCpuBoostMs() || hasCpuBoostSyncThreshold()
-                || hasCpuBoostInputFreq() || hasCpuBoostInputMs() || hasCpuBoostHotplug() || hasCpuBoostWakeup();
+                || hasCpuBoostInputFreq() || hasCpuBoostInputMs() || hasCpuBoostHotplug() || hasCpuBoostWakeup() || hascpuinputboost();
     }
 
     private void run(String command, String id, Context context) {

@@ -19,6 +19,7 @@
  */
 package com.grarak.kerneladiutor.fragments.kernel;
 
+import android.text.InputType;
 import android.util.SparseArray;
 
 import com.grarak.kerneladiutor.R;
@@ -36,6 +37,7 @@ import com.grarak.kerneladiutor.utils.kernel.cpu.Misc;
 import com.grarak.kerneladiutor.views.dialog.Dialog;
 import com.grarak.kerneladiutor.views.recyclerview.CardView;
 import com.grarak.kerneladiutor.views.recyclerview.DescriptionView;
+import com.grarak.kerneladiutor.views.recyclerview.GenericSelectView;
 import com.grarak.kerneladiutor.views.recyclerview.RecyclerViewItem;
 import com.grarak.kerneladiutor.views.recyclerview.SeekBarView;
 import com.grarak.kerneladiutor.views.recyclerview.SelectView;
@@ -120,6 +122,9 @@ public class CPUFragment extends RecyclerViewFragment {
         if (Misc.hasCpuTouchBoost()) {
             Log.crashlyticsI("cpuTouchBoostInit");
             cpuTouchBoostInit(items);
+        }
+        if (mCPUBoost.hascpuinputboost()) {
+            cpuInputBoostInit(items);
         }
     }
 
@@ -535,6 +540,91 @@ public class CPUFragment extends RecyclerViewFragment {
                 -> Misc.enableCpuTouchBoost(isChecked, getActivity()));
 
         items.add(touchBoost);
+    }
+
+    private void cpuInputBoostInit(List<RecyclerViewItem> items) {
+
+        CardView cpuInputBoost = new CardView(getActivity());
+        cpuInputBoost.setTitle(getString(R.string.cpu_input_boost));
+
+	if (mCPUBoost.hascpuinputboostenable()) { 
+            SwitchView cpuinputboost = new SwitchView();
+            cpuinputboost.setSummary(getString(R.string.cpu_input_boost_summary));
+            cpuinputboost.setChecked(mCPUBoost.iscpuinputboostEnabled());
+            cpuinputboost.addOnSwitchListener(new SwitchView.OnSwitchListener() {
+		@Override
+		public void onChanged(SwitchView switchView, boolean isChecked) {
+			mCPUBoost.enablecpuinputboost(isChecked, getActivity());
+		}
+            });
+            cpuInputBoost.addItem(cpuinputboost);
+	}
+
+	if (mCPUBoost.hascpuiboostduration()) { 
+            SeekBarView cpuiboostduration = new SeekBarView();
+            cpuiboostduration.setTitle(getString(R.string.cpuiboost_duration));
+            cpuiboostduration.setSummary(getString(R.string.cpuiboost_duration_summary));
+            cpuiboostduration.setUnit(" ms");
+            cpuiboostduration.setMax(5000);
+            cpuiboostduration.setOffset(10);
+            cpuiboostduration.setProgress(mCPUBoost.getcpuiboostduration() / 10 );
+            cpuiboostduration.setOnSeekBarListener(new SeekBarView.OnSeekBarListener() {
+		@Override
+		public void onStop(SeekBarView seekBarView, int position, String value) {
+			mCPUBoost.setcpuiboostduration((position * 10), getActivity());
+		}
+
+		@Override
+		public void onMove(SeekBarView seekBarView, int position, String value) {
+		}
+            });
+
+            cpuInputBoost.addItem(cpuiboostduration);
+	}
+
+	if (mCPUBoost.hascpuiboostfreq()) { 
+            List<String> freqs = mCPUBoost.getcpuiboostfreq();
+            final String[] lowFreq = {freqs.get(0)};
+            final String[] highFreq = {freqs.get(1)};
+
+            GenericSelectView lowfreq = new GenericSelectView();
+            lowfreq.setTitle(getString(R.string.input_boost_freq) + (" (Hz)"));
+            lowfreq.setSummary("Low");
+            lowfreq.setValue(lowFreq[0]);
+            lowfreq.setValueRaw(lowfreq.getValue().replace(" Hz", ""));
+            lowfreq.setInputType(InputType.TYPE_CLASS_NUMBER);
+            lowfreq.setOnGenericValueListener(new GenericSelectView.OnGenericValueListener() {
+                @Override
+                public void onGenericValueSelected(GenericSelectView genericSelectView, String value) {
+                    mCPUBoost.setcpuiboostfreq(value, highFreq[0], getActivity());
+                    genericSelectView.setValue(value);
+                    lowFreq[0] = value;
+                }
+            });
+
+            cpuInputBoost.addItem(lowfreq);
+
+            GenericSelectView highfreq = new GenericSelectView();
+            highfreq.setSummary("High");
+            highfreq.setValue(highFreq[0]);
+            highfreq.setValueRaw(highfreq.getValue().replace(" Hz", ""));
+            highfreq.setInputType(InputType.TYPE_CLASS_NUMBER);
+            highfreq.setOnGenericValueListener(new GenericSelectView.OnGenericValueListener() {
+                @Override
+                public void onGenericValueSelected(GenericSelectView genericSelectView, String value) {
+                    mCPUBoost.setcpuiboostfreq(lowFreq[0], value, getActivity());
+                    genericSelectView.setValue(value);
+                    highFreq[0] = value;
+                }
+            });
+
+            cpuInputBoost.addItem(highfreq);
+	}
+
+
+	if (cpuInputBoost.size() > 0) {
+            items.add(cpuInputBoost);
+	}
     }
 
     private float[] mCPUUsages;
