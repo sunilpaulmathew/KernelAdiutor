@@ -65,12 +65,23 @@ public class Sound {
     private static final String MICROPHONE_FLAR = "/sys/kernel/sound_control/mic_gain";
     private static final String SPEAKER_FLAR = "/sys/kernel/sound_control/speaker_gain";
 
+    private static final String BOEFFLA_SOUND = "/sys/class/misc/boeffla_sound";
+    private static final String BOEFFLA_SOUND_ENABLE = BOEFFLA_SOUND + "/boeffla_sound";
+    private static final String BOEFFLA_SPEAKER = BOEFFLA_SOUND + "/speaker_volume";
+    private static final String BOEFFLA_HP = BOEFFLA_SOUND + "/headphone_volume";
+    private static final String BOEFFLA_EP = BOEFFLA_SOUND + "/earpiece_volume";
+    private static final String BOEFFLA_MIC = BOEFFLA_SOUND + "/mic_level_call";
+    private static final String BOEFFLA_VERSION = BOEFFLA_SOUND + "/version";
+
     private final List<String> mSpeakerGainFiles = new ArrayList<>();
 
     private final List<String> mFauxLimits = new ArrayList<>();
     private final List<String> mFrancoLimits = new ArrayList<>();
     private final List<String> mFlarLimits = new ArrayList<>();
     private final List<String> mFlarHpLimits = new ArrayList<>();
+    private final List<String> mboefflaLimits = new ArrayList<>();
+    private final List<String> mboefflaEPLimits = new ArrayList<>();
+    private final List<String> mBoefflaMICLimits = new ArrayList<>();
 
     {
         mSpeakerGainFiles.add(SPEAKER_GAIN);
@@ -93,6 +104,15 @@ public class Sound {
 
         for (int i = -40; i < 21; i++) {
             mFlarHpLimits.add(String.valueOf(i));
+        }
+        for (int i = -30; i < 31; i++) {
+            mboefflaLimits.add(String.valueOf(i));
+        }
+        for (int i = -10; i < 21; i++) {
+            mboefflaEPLimits.add(String.valueOf(i));
+        }
+        for (int i = -20; i < 31; i++) {
+            mBoefflaMICLimits.add(String.valueOf(i));
         }
     }
 
@@ -165,7 +185,7 @@ public class Sound {
 
     public void setHeadphonePowerAmpGain(String value, Context context) {
         value = String.valueOf(38 - Utils.strToInt(value));
-        fauxRun(value + " " + value, HEADPHONE_POWERAMP_GAIN, HEADPHONE_POWERAMP_GAIN, context);
+        SoundRun(value + " " + value, HEADPHONE_POWERAMP_GAIN, HEADPHONE_POWERAMP_GAIN, context);
     }
 
     public String getHeadphonePowerAmpGain() {
@@ -221,11 +241,11 @@ public class Sound {
                 int newGain = Utils.strToInt(value);
                 if (newGain >= 0 && newGain <= 20) {
                     // Zero / 1 to 20 (positive gain range)
-                    fauxRun(value + " " + value, SPEAKER_GAIN, SPEAKER_GAIN, context);
+                    SoundRun(value + " " + value, SPEAKER_GAIN, SPEAKER_GAIN, context);
                 } else if (newGain <= -1 && newGain >= -30) {
                     // -1 to -30 (negative gain range)
                     value = String.valueOf(newGain + 256);
-                    fauxRun(value + " " + value, SPEAKER_GAIN, SPEAKER_GAIN, context);
+                    SoundRun(value + " " + value, SPEAKER_GAIN, SPEAKER_GAIN, context);
                 }
                 break;
             case SPEAKER_BOOST:
@@ -263,6 +283,14 @@ public class Sound {
                 return mFrancoLimits;
             case SPEAKER_FLAR:
                 return mFlarLimits;
+            case BOEFFLA_SPEAKER:
+                return mboefflaLimits;
+            case BOEFFLA_HP:
+                return mboefflaLimits;
+            case BOEFFLA_EP:
+                return mboefflaEPLimits;
+            case BOEFFLA_MIC:
+                return mBoefflaMICLimits;
         }
         return new ArrayList<>();
     }
@@ -274,10 +302,10 @@ public class Sound {
     public void setCamMicrophoneGain(String value, Context context) {
         int newGain = Utils.strToInt(value);
         if (newGain >= 0 && newGain <= 20) {
-            fauxRun(value, CAM_MICROPHONE_GAIN, CAM_MICROPHONE_GAIN, context);
+            SoundRun(value, CAM_MICROPHONE_GAIN, CAM_MICROPHONE_GAIN, context);
         } else if (newGain <= -1 && newGain >= -30) {
             value = String.valueOf(newGain + 256);
-            fauxRun(value, CAM_MICROPHONE_GAIN, CAM_MICROPHONE_GAIN, context);
+            SoundRun(value, CAM_MICROPHONE_GAIN, CAM_MICROPHONE_GAIN, context);
         }
     }
 
@@ -303,10 +331,10 @@ public class Sound {
     public void setHandsetMicrophoneGain(String value, Context context) {
         int newGain = Utils.strToInt(value);
         if (newGain >= 0 && newGain <= 20) {
-            fauxRun(value, HANDSET_MICROPHONE_GAIN, HANDSET_MICROPHONE_GAIN, context);
+            SoundRun(value, HANDSET_MICROPHONE_GAIN, HANDSET_MICROPHONE_GAIN, context);
         } else if (newGain <= -1 && newGain >= -30) {
             value = String.valueOf(newGain + 256);
-            fauxRun(value, HANDSET_MICROPHONE_GAIN, HANDSET_MICROPHONE_GAIN, context);
+            SoundRun(value, HANDSET_MICROPHONE_GAIN, HANDSET_MICROPHONE_GAIN, context);
         }
     }
 
@@ -331,10 +359,10 @@ public class Sound {
     public void setHeadphoneGain(String value, Context context) {
         int newGain = Utils.strToInt(value);
         if (newGain >= 0 && newGain <= 20) {
-            fauxRun(value + " " + value, HEADPHONE_GAIN, HEADPHONE_GAIN, context);
+            SoundRun(value + " " + value, HEADPHONE_GAIN, HEADPHONE_GAIN, context);
         } else if (newGain <= -1 && newGain >= -30) {
             value = String.valueOf(newGain + 256);
-            fauxRun(value + " " + value, HEADPHONE_GAIN, HEADPHONE_GAIN, context);
+            SoundRun(value + " " + value, HEADPHONE_GAIN, HEADPHONE_GAIN, context);
         }
     }
 
@@ -386,14 +414,14 @@ public class Sound {
                 || hasHandsetMicrophoneGain() || hasCamMicrophoneGain() || hasSpeakerGain()
                 || hasHeadphonePowerAmpGain() || hasLockOutputGain() || hasLockMicGain()
                 || hasMicrophoneGain() || hasVolumeGain() || hasHeadphoneFlar()
-                || hasMicrophoneFlar();
+                || hasMicrophoneFlar() || hasboefflasound();
     }
 
     private long getChecksum(int a, int b) {
         return (Integer.MAX_VALUE * 2L + 1L) ^ (a + b);
     }
 
-    private void fauxRun(String value, String path, String id, Context context) {
+    private void SoundRun(String value, String path, String id, Context context) {
         String[] values = value.split(" ");
         int left = Utils.strToInt(values[0]);
         int right = 0;
@@ -413,7 +441,7 @@ public class Sound {
     public void setHeadphoneFlar(String value, Context context) {
         int newGain = Utils.strToInt(value);
         if (newGain >= -40 && newGain <= 20) {
-            fauxRun(value + " " + value, HEADPHONE_FLAR, HEADPHONE_FLAR, context);
+            SoundRun(value + " " + value, HEADPHONE_FLAR, HEADPHONE_FLAR, context);
         }
     }
 
@@ -450,6 +478,114 @@ public class Sound {
 
     public boolean hasMicrophoneFlar() {
         return Utils.existFile(MICROPHONE_FLAR);
+    }
+
+    public List<String> getBoefflaMICLimits() {
+        return mBoefflaMICLimits;
+    }
+
+    public void enableboefflasound(boolean enable, Context context) {
+        run(Control.write(enable ? "1" : "0", BOEFFLA_SOUND_ENABLE), BOEFFLA_SOUND_ENABLE, context);
+    }
+
+    public boolean isboefflasoundenabled() {
+        return Utils.readFile(BOEFFLA_SOUND_ENABLE).equals("Boeffla sound status: 1");
+    }
+
+    public boolean hasboefflasoundenable() {
+       return Utils.existFile(BOEFFLA_SOUND_ENABLE);
+    }
+
+    public boolean hasboefflasound() {
+       return Utils.existFile(BOEFFLA_SOUND);
+    }
+
+    public String getboefflasoundVersion()  {
+        return Utils.readFile(BOEFFLA_VERSION);
+    }
+
+    public void setboefflaspeaker(String value, Context context) {
+        int newGain = Utils.strToInt(value);
+        if (newGain >= -30 && newGain <= 30) {
+            SoundRun(value + " " + value, BOEFFLA_SPEAKER, BOEFFLA_SPEAKER, context);
+        }
+    }
+
+    public void setboefflaep(String value, Context context) {
+        int newGain = Utils.strToInt(value);
+        if (newGain >= -10 && newGain <= 20) {
+            SoundRun(value + " " + value, BOEFFLA_EP, BOEFFLA_EP, context);
+        }
+    }
+
+    public List<String> getboefflaLimits() {
+        return mboefflaLimits;
+    }
+
+    public List<String> getboefflaEPLimits() {
+        return mboefflaEPLimits;
+    }
+
+    public String getboefflaspeaker() {
+        String value = Utils.readFile(BOEFFLA_SPEAKER);
+        int gain = Utils.strToInt(value.contains(" ") ? value.split(" ")[0] : value);
+        if (gain >= -30 && gain <= 30) {
+            return String.valueOf(gain);
+        }
+        return "";
+    }
+
+    public String getboefflaep() {
+        String value = Utils.readFile(BOEFFLA_EP);
+        int gain = Utils.strToInt(value.contains(" ") ? value.split(" ")[0] : value);
+        if (gain >= -10 && gain <= 20) {
+            return String.valueOf(gain);
+        }
+        return "";
+    }
+
+    public boolean hasboefflaspeaker() {
+        return Utils.existFile(BOEFFLA_SPEAKER);
+    }
+
+    public boolean hasboefflaep() {
+        return Utils.existFile(BOEFFLA_EP);
+    }
+
+    public void setboefflamic(String value, Context context) {
+        run(Control.write(value, BOEFFLA_MIC), BOEFFLA_MIC, context);
+    }
+
+    public String getboefflamic() {
+        return Utils.readFile(BOEFFLA_MIC);
+    }
+
+    public List<String> getboefflamicLimits() {
+        return mBoefflaMICLimits;
+    }
+
+    public boolean hasboefflamic() {
+        return Utils.existFile(BOEFFLA_MIC);
+    }
+
+    public void setboefflahp(String channel, String value, Context context) {
+        int newGain = Utils.strToInt(value);
+	if (newGain >= -30 && newGain <= 30) {
+            SoundRun(value + " " + value, BOEFFLA_HP, BOEFFLA_HP, context);
+        }
+    }
+
+    public static String getboefflahp(String channel) {
+        String value = Utils.readFile(BOEFFLA_HP);
+        int gain = Utils.strToInt(value.contains(" ") ? value.split(" ")[0] : value);
+        if (gain >= -30 && gain <= 30) {
+            return String.valueOf(gain);
+        }
+        return "";
+    }
+
+    public boolean hasboefflahp() {
+        return Utils.existFile(BOEFFLA_HP);
     }
 
 }
